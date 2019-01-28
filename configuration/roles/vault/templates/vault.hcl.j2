@@ -1,0 +1,20 @@
+ui = true
+api_addr = "https://{{inventory_hostname}}:8200"
+cluster_addr = "https://{{inventory_hostname}}:8201"
+storage "consul" {
+  address = "127.0.0.1:8500"
+  path    = "vault/"
+}
+
+listener "tcp" {
+  address          = "0.0.0.0:8200"
+  cluster_address  = "{{inventory_hostname}}:8201"
+  tls_disable = false
+  tls_key_file  = "{{ssl_key_dir}}/server.key"
+  tls_cert_file = "{{ssl_cert_dir}}/server.crt"
+}
+
+seal "awskms" {
+  region     = "{{aws_region}}"
+  kms_key_id = "{{kms_key}}"
+}

@@ -1,0 +1,40 @@
+---
+- name: Consul Server Configuration
+  debug:
+    msg: 'Consul Server Configuration'
+- name: Create consul server systemd service file 
+  template:
+    src: consul-server.service.j2
+    dest: /etc/systemd/system/consul-server.service
+- name: Create consul config 
+  template:
+    src: consul-server.hcl.j2
+    dest: "{{consul_config_dir}}/consul.hcl"
+    owner: consul
+    group: consul
+    mode: 0640
+- name: Enable and start consul server service
+  systemd:
+    name: consul-server.service
+    state: restarted
+    # state: started
+    enabled: yes
+# - name: Write enterprise key
+#   shell: "/usr/local/bin/consul license put \"{{consul_ent_key}}\""
+#   when: inventory_hostname == groups["consul"][0]
+- name: Set environment variable so local calls resolve to the host
+  vars:
+    env_var_set: "CONSUL_HTTP_ADDR='{{inventory_hostname}}:8501'"
+  lineinfile:
+    dest: "/etc/environment"
+    state: present
+    regexp: "^{{env_var_set}}"
+    line: "{{env_var_set}}"
+- name: Set environment variable to force https
+  vars:
+    env_var_set: "CONSUL_HTTP_SSL=true"
+  lineinfile:
+    dest: "/etc/environment"
+    state: present
+    regexp: "^{{env_var_set}}"
+    line: "{{env_var_set}}"

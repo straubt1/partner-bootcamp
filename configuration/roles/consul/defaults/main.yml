@@ -1,0 +1,6 @@
+---
+# defaults file for consul
+consul_type: "server"
+consul_config_dir: "/etc/consul.d"
+consul_data_dir: "/opt/consul"
+consul_datacenter: "centralus-dc"

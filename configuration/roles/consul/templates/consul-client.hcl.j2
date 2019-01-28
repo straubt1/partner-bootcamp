@@ -1,0 +1,11 @@
+datacenter = "dc1"
+server = false
+node_name = "{{inventory_hostname}}"
+data_dir = "{{consul_data_dir}}"
+bind_addr = "{{ansible_default_ipv4.address}}"
+client_addr = "127.0.0.1"
+encrypt = "{{consul_encrypt_key}}"
+retry_join = ["{{ groups['consul']|join('","') }}"]
+log_level = "DEBUG"
+enable_syslog = true
+acl_enforce_version_8 = true

@@ -1,0 +1,56 @@
+---
+- name: Consul Common Configuration
+  debug:
+    msg: 'Consul Common Configuration'
+- name: Copy Consul
+  copy:
+    src: "{{ role_path }}/templates/consul"
+    dest: /usr/local/bin/
+    mode: +x
+    # force: yes
+# - name: Download consul
+#   get_url:
+#     # url: "https://releases.hashicorp.com/consul/{{consul_version}}/consul_{{consul_version}}_{{consul_arch}}.zip"
+#     url: "https://s3-us-west-2.amazonaws.com/hc-enterprise-binaries/consul/ent/{{consul_version}}/consul-enterprise_{{consul_version}}%2Bent_{{consul_arch}}.zip"
+#     dest: /tmp/consul.zip
+#     # force: yes
+#     # checksum: "sha256:{{consul_sha256}}"
+# - name: Unzip consul and put in path
+#   unarchive:
+#     src: /tmp/consul.zip
+#     dest: /usr/local/bin/
+#     remote_src: yes
+#     # force: yes
+- name: chown to root
+  file:
+    path: /usr/local/bin/consul
+    owner: ubuntu
+    group: ubuntu
+- name: Check if Consul is present
+  command: /usr/local/bin/consul -v
+  register: consul_v
+- name: Print
+  debug:
+    var: consul_v.stdout
+# sudo useradd --system --home /etc/consul.d --shell /bin/false consul
+- name: Add the user 'consul'
+  user:
+    name: consul
+    comment: Create a unique non privileged system user to run Consul
+    system: yes
+    home: "{{consul_config_dir}}"
+    shell: /bin/false
+# sudo mkdir --parents /opt/consul
+# sudo chown --recursive consul:consul /opt/consul
+- name: Create data directory
+  file:
+    path: "{{consul_data_dir}}"
+    state: directory    
+    owner: consul
+    group: consul
+- name: Create config directory
+  file:
+    path: "{{consul_config_dir}}"
+    state: directory    
+    owner: consul
+    group: consul

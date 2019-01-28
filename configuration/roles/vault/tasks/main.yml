@@ -1,0 +1,125 @@
+---
+- name: Vault Configuration
+  debug:
+    var: vars | var_filter
+- name: Copy Vault
+  copy:
+    src: "{{ role_path }}/templates/vault"
+    dest: /usr/local/bin/
+    mode: +x
+    # force: yes
+# - name: Download vault
+#   get_url:
+#     url: "https://s3-us-west-2.amazonaws.com/hc-enterprise-binaries/vault/ent/{{vault_version}}/vault-enterprise_{{vault_version}}%2Bent_{{vault_arch}}.zip"
+#     dest: /tmp/vault.zip 
+#     # checksum: "sha256:{{vault_sha256}}"
+#     force: yes
+# - name: Unzip vault and put in path
+#   unarchive:
+#     src: /tmp/vault.zip
+#     dest: /usr/local/bin/
+#     remote_src: yes
+#     force: yes
+- name: Check if vault is present
+  command: /usr/local/bin/vault -v
+  register: vault_v
+- name: Print
+  debug:
+    var: vault_v.stdout
+- name: Set environment variable so local calls resolve to the host
+  vars:
+    env_var_set: "VAULT_ADDR='https://{{inventory_hostname}}:8200'"
+  lineinfile:
+    dest: "/etc/environment"
+    state: present
+    regexp: "^{{env_var_set}}"
+    line: "{{env_var_set}}"
+# # sudo setcap cap_ipc_lock=+ep /usr/local/bin/vault
+# - name: Set cap_ipc_lock=+ep on /usr/local/bin/vault
+#   capabilities:
+#     path: /usr/local/bin/vault
+#     capability: cap_ipc_lock=+ep
+#     state: present
+# # sudo useradd --system --home /etc/vault.d --shell /bin/false vault
+- name: Add the user 'vault'
+  user:
+    name: vault
+    comment: Create a unique non privileged system user to run Vault
+    system: yes
+    home: /etc/vault.d
+    shell: /bin/false
+
+
+- name: Create vault systemd service file 
+  template:
+    src: vault.service.j2
+    dest: /etc/systemd/system/vault.service
+- name: Create config directory
+  file:
+    path: "{{vault_config_dir}}"
+    state: directory    
+    owner: vault
+    group: vault
+- name: Create vault config 
+  template:
+    src: vault.hcl.j2
+    dest: "{{vault_config_dir}}/vault.hcl"
+    owner: vault
+    group: vault
+    mode: 0640
+- name: Enable and start vault service
+  systemd:
+    name: vault.service
+    state: started
+    enabled: yes
+
+# specify -address for first run when ENV var not available
+- name: Check vault init status
+  command: "/usr/local/bin/vault status -format json -address https://{{inventory_hostname}}:8200"
+  register: vault_status
+  failed_when: vault_status.rc == 1 or vault_status.rc > 2
+  when: inventory_hostname == groups["vault"][0]
+
+- name: Vault init
+#   command: "echo init = no"
+  command: "/usr/local/bin/vault operator init -format json -address https://{{inventory_hostname}}:8200"
+  register: vault_init_keys
+#   failed_when: vault_status.rc == 1 or vault_status.rc > 2
+  ignore_errors: yes
+  when: inventory_hostname == groups["vault"][0] and not (vault_status.stdout|from_json).initialized
+- name: Copy init keys to host
+  copy:
+    content: "{{vault_init_keys.stdout|from_json}}"
+    dest: /home/ubuntu/init.json
+#   failed_when: vault_status.rc == 1 or vault_status.rc > 2
+  when: inventory_hostname == groups["vault"][0] and not (vault_status.stdout|from_json).initialized
+
+- name: Restart vault service (Auto unseal)
+  systemd:
+    name: vault.service
+    state: restarted
+
+# - name: Read keys file
+#   command: cat /home/azureuser/init.json
+#   register: keys_file
+#   when: inventory_hostname == groups["vault"][0]
+
+# # Auto unseal means this is no longer required
+# # - name: Check vault seal status
+# #   command: "/usr/local/bin/vault status -format json -address http://{{ansible_default_ipv4.address}}:8200"
+# #   register: vault_seal_status
+# #   failed_when: vault_seal_status.rc == 1 or vault_seal_status.rc > 2
+# #   when: inventory_hostname == groups["vault"][0]
+# # - name: Unseal vault
+# #   command: "/usr/local/bin/vault operator unseal {{item}}"
+# #   with_items: "{{(keys_file.stdout|from_json).unseal_keys_b64[:3]}}"
+# #   when: inventory_hostname == groups["vault"][0] and (vault_seal_status.stdout|from_json).sealed
+
+# - name: Check enterprise license status
+#   shell: "export VAULT_TOKEN={{(keys_file.stdout|from_json).root_token}} && /usr/local/bin/vault read -format json sys/license"
+#   register: vault_ent_license_status
+#   when: inventory_hostname == groups["vault"][0]
+# - name: Write enterprise key
+#   shell: "export VAULT_TOKEN={{(keys_file.stdout|from_json).root_token}} && /usr/local/bin/vault write sys/license text={{vault_ent_key}}"
+#   when: inventory_hostname == groups["vault"][0]
+# #   when: (vault_ent_license_status.stdout|from_json).data.license_id != 'temporary'

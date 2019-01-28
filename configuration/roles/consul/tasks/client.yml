@@ -1,0 +1,20 @@
+---
+- name: Consul Client Configuration
+  debug:
+    msg: 'Consul Client Configuration'
+- name: Create consul client systemd service file 
+  template:
+    src: consul-client.service.j2
+    dest: /etc/systemd/system/consul-client.service
+- name: Create consul config 
+  template:
+    src: consul-client.hcl.j2
+    dest: "{{consul_config_dir}}/consul.hcl"
+    owner: consul
+    group: consul
+    mode: 0640
+- name: Enable and start consul client service
+  systemd:
+    name: consul-client.service
+    state: started
+    enabled: yes

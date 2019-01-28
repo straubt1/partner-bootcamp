@@ -1,0 +1,10 @@
+---
+# If we had any default values, or values that were universally true, we would put them in a file called group_vars/all
+# ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o ProxyCommand="ssh -W %h:%p -q azureuser@control-jumpbox-dev.centralus.cloudapp.azure.com"'
+
+ssl_key_dir: "/etc/letsencrypt/private"
+ssl_cert_dir: "/usr/local/share/ca-certificates/hashistack"
+ssl_domain: "bootcamp.tstraub.com"
+aws_region: "us-east-1"
+kms_key: "xxxxxxxxx"
+consul_encrypt_key: "xxxxxxxxx"

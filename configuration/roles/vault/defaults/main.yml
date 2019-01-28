@@ -1,0 +1,3 @@
+---
+# defaults file for vault
+vault_config_dir: "/etc/vault.d"

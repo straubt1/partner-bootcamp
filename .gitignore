@@ -12,3 +12,4 @@ scratch.md
 *.pyc
 **/templates/consul
 **/templates/vault
+setup/

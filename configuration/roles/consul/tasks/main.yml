@@ -1,0 +1,12 @@
+---
+- name: Consul Configuration
+  debug:
+    var: vars | var_filter
+- name: Common Configuration for consul
+  include: common.yml
+- name: Configure Consul as Server
+  include: server.yml
+  when: consul_type == 'server'
+- name: Configure Consul as Client
+  include: client.yml
+  when: consul_type == 'client'

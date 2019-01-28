@@ -1,0 +1,10 @@
+---
+- name: Main.yml @common
+  hosts: all
+  become: yes
+  tasks:
+  - name: Create common file
+    copy:
+      content: "Common file - created on {{ ansible_date_time.iso8601_micro }}\n"
+      dest: "/tmp/test"
+      force: no #only do it if it doesnt exist

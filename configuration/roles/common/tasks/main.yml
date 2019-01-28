@@ -1,0 +1,28 @@
+---
+- name: Create common file
+  copy:
+    content: "Common file - created on {{ ansible_date_time.iso8601_micro }}\n"
+    dest: "{{ file_location }}"
+    force: no #only do it if it doesnt exist
+- name: Create key directory
+  file:
+    path: "{{ssl_key_dir}}"
+    state: directory
+    mode: 0755
+- name: Create cert directory
+  file:
+    path: "{{ssl_cert_dir}}"
+    state: directory
+
+- name: Copy ssl server.key
+  copy:
+    src: secrets/server.key
+    dest: "{{ssl_key_dir}}/server.key"
+
+- name: Copy ssl server.crt
+  copy:
+    src: secrets/server.crt
+    dest: "{{ssl_cert_dir}}/server.crt"
+    mode: 0644
+- name: Update cert index
+  shell: /usr/sbin/update-ca-certificates

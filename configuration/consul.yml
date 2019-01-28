@@ -1,0 +1,15 @@
+---
+- name: consul.yml @common
+  hosts: consul
+  become: yes
+  tasks:
+  - name: Create common file
+    copy:
+      content: "Last Ran {{ ansible_date_time.iso8601_micro }}\n"
+      dest:   /home/ubuntu/test.txt
+      force: yes
+  - debug:
+      msg: "{{ groups['consul']|join(',') }}"
+  roles:
+    - common
+    - { role: consul, consul_type: 'server' }

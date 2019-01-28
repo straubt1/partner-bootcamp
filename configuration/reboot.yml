@@ -1,0 +1,8 @@
+---
+- name: Reboot
+  hosts: all
+  become: yes
+  tasks:
+  - name: Reboot
+    reboot:
+    
