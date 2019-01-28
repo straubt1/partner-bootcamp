@@ -1,0 +1,14 @@
+terraform.tfvars
+.terraform/
+secrets.md
+*.tfstate*
+*.pem
+*.pub
+credentials
+*.crt
+*.key
+secrets/
+scratch.md
+*.pyc
+**/templates/consul
+**/templates/vault
